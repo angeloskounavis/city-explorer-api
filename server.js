@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 // REQUIRE
 // in our servers, we have to use 'require' instead of 'import'
 // Here we will list the requirments for a server
@@ -27,7 +28,32 @@ app.use(cors());
 // define the PORT and validate that our .env is working
 const PORT = process.env.PORT || 3001;
 
+const MOVIES_API_KEY = process.env.MOVIES_API_KEY;
+
 // If we see our server running on 3002, that means theere's a problem with our .env file or how we are importing it.
+
+// I am create a route API for movies
+
+app.get('/movies', async (req, res, next) => {
+  try {
+    let city = req.query.city;
+    let url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_API_KEY}&query=${city}`;
+    let movieResponse = await axios.get(url);
+    console.log(movieResponse.data.results);
+    let movieArray = movieResponse.data.results;
+    let moviesToSend = movieArray.map(movie => new Movie(movie));
+    res.send(moviesToSend);
+
+  } catch (error) {
+    next(error)
+
+  }
+
+
+})
+
+
+
 
 // ROUTES
 // this is where we will write handlers for our endpoints
@@ -48,7 +74,7 @@ const PORT = process.env.PORT || 3001;
 app.get('/weather', handleWeather);
 app.use('*', (request, response) => response.status(404).send('No page found'));
 
-function handleWeather (request, response) {
+function handleWeather(request, response) {
   let { searchQuery } = request.query;
   const city = weather.find(city => city.city_name.toLowerCase() === searchQuery.toLowerCase());
 
@@ -73,7 +99,15 @@ function Forecast(day) {
 }
 
 
-
+function Movie(movie) {
+  this.title = movie.title,
+    this.overview = movie.overview,
+    this.average_votes = movie.vote_average,
+    this.total_votes = movie.vote_count,
+    this.image_url = movie.poster_path,
+    this.popularity = movie.popularity,
+    this.released_on = movie.release_date
+}
 
 // '*' wild card
 // this will run for any route not defined above
