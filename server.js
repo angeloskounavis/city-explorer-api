@@ -8,6 +8,7 @@ const axios = require('axios');
 // Here we will list the requirments for a server
 // const express = require('express');
 let weather = require('./data/weather.json');
+let cache = require('./cache.js');
 
 
 // we need to bring in our .env file, so we'll use this after we have installed
@@ -28,7 +29,7 @@ app.use(cors());
 // define the PORT and validate that our .env is working
 const PORT = process.env.PORT || 3001;
 
-const MOVIES_API_KEY = process.env.MOVIES_API_KEY;
+// const MOVIES_API_KEY = process.env.MOVIES_API_KEY;
 
 // If we see our server running on 3002, that means theere's a problem with our .env file or how we are importing it.
 
@@ -45,12 +46,12 @@ app.get('/movies', async (req, res, next) => {
     res.send(moviesToSend);
 
   } catch (error) {
-    next(error)
+    next(error);
 
   }
 
 
-})
+});
 
 
 
@@ -74,6 +75,39 @@ app.get('/movies', async (req, res, next) => {
 app.get('/weather', handleWeather);
 app.use('*', (request, response) => response.status(404).send('No page found'));
 
+function getMovies(location) {
+  const key = 'movies-' + location;
+  const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIES_API_KEY}&langeuage=en-US&page=1&query=${location}`;
+
+  //https://api.themoviedb.org/3/movie/{movie_id}/images?api_key=<<api_key>>&language=en-US
+
+
+  if (!cache[key]) {
+    cache[key] = {};
+    cache[key].timestamp = Date.now();
+    cache[key].data = axios.get(url)
+      .then(data => parseMoviesData(data.data));
+
+  }
+  return cache[key].data;
+}
+
+function parseMoviesData(data) {
+  try {
+    const movies = data.results.map(movie => {
+      return new Movie(movie);
+    });
+    return Promise.resolve(movies);
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+
+
+
+
+
 function handleWeather(request, response) {
   let { searchQuery } = request.query;
   const city = weather.find(city => city.city_name.toLowerCase() === searchQuery.toLowerCase());
@@ -91,6 +125,7 @@ function handleWeather(request, response) {
     // create a new instance of the Error object that lives in Express
     errorHandler(error, response);
   }
+  getMovies();
 }
 
 function Forecast(day) {
@@ -101,12 +136,13 @@ function Forecast(day) {
 
 function Movie(movie) {
   this.title = movie.title,
-    this.overview = movie.overview,
-    this.average_votes = movie.vote_average,
-    this.total_votes = movie.vote_count,
-    this.image_url = movie.poster_path,
-    this.popularity = movie.popularity,
-    this.released_on = movie.release_date
+  this.overview = movie.overview,
+  this.average_votes = movie.vote_average,
+  this.total_votes = movie.vote_count,
+  this.image_url = 'https://image.tmdb.org/t/p/w500/' + movie.poster_path,
+  this.popularity = movie.popularity,
+  this.released_on = movie.release_date;
+
 }
 
 // '*' wild card
