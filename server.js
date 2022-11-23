@@ -15,7 +15,7 @@ app.use(cors());
 // define the PORT and validate that our .env is working
 const PORT = process.env.PORT || 3001;
 
-app.get('/weather', handleWeather);
+app.get('/weather', weather);
 // app.use('*', (request, response) => response.status(404).send('No page found'));
 
 app.get('/movies', handleMovies);
@@ -31,15 +31,15 @@ function handleMovies(request, response) {
     });
 }
 
-function handleWeather(request, response) {
-  let { lat, lon } = request.query;
-  console.log('I am in weather', lat, lon);
-  weather(lat, lon)
-    .then(weatherSummary => response.send(weatherSummary))
-    .catch((error) => {
-      console.error(error);
-      response.status(500).send('something went wrong');
-    });
-}
+// function handleWeather(request, response) {
+//   let { lat, lon } = request.query;
+//   console.log('I am in weather', lat, lon);
+//   weather(lat, lon)
+//     .then(weatherSummary => response.send(weatherSummary))
+//     .catch((error) => {
+//       console.error(error);
+//       response.status(500).send('something went wrong');
+//     });
+// }
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
